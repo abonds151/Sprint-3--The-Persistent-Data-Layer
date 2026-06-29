@@ -1,0 +1,122 @@
+//Antonio Bonds II
+//COMP 322
+//Sprint 3- The Persistent Data Layer
+//User is one table, Item is another table, and one user can have many items, but each item belongs to one user.
+const express = require("express");
+const prisma = require("./prisma");
+
+const app = express();
+app.use(express.json());
+
+const PORT = 3000; //
+
+// Home route
+app.get("/", (req, res) => {
+  res.send("Milestone 3 Database Integration Complete");
+});
+
+
+// GET all users
+app.get("/users", async (req, res) => {
+  const users = await prisma.user.findMany({
+    include: { items: true }
+  });
+
+  res.json(users);
+});
+
+
+// CREATE user
+app.post("/users", async (req, res) => {
+  const { name, email } = req.body;
+
+  if (!name || !email) {
+    return res.status(400).json({
+      error: "Name and email required"
+    });
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email
+    }
+  });
+
+  res.status(201).json(user);
+});
+
+
+// GET all items
+app.get("/items", async (req, res) => {
+  const items = await prisma.item.findMany({
+    include: { user: true }
+  });
+
+  res.json(items);
+});
+
+
+// CREATE item
+app.post("/items", async (req, res) => {
+  const { title, description, userId } = req.body;
+
+  if (!title || !userId) {
+    return res.status(400).json({
+      error: "Title and userId required"
+    });
+  }
+
+  const item = await prisma.item.create({
+    data: {
+      title,
+      description,
+      userId
+    }
+  });
+
+  res.status(201).json(item);
+});
+
+//Going back to previously stated. The User is one table, Item is another table, and one user can have many items, but each item belongs to one user.
+// UPDATE item
+app.put("/items/:id", async (req, res) => {
+  const { id } = req.params;
+  const { title, description, completed } = req.body;
+
+  const updatedItem = await prisma.item.update({
+    where: {
+      id: parseInt(id)
+    },
+    data: {
+      title,
+      description,
+      completed
+    }
+  });
+
+  res.json(updatedItem);
+});
+
+
+// DELETE item
+app.delete("/items/:id", async (req, res) => {
+  const { id } = req.params;
+
+  await prisma.item.delete({
+    where: {
+      id: parseInt(id)
+    }
+  });
+
+  res.json({
+    message: "Item deleted successfully"
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+//Finished
+//After this all users and items should correspond correctly together.
